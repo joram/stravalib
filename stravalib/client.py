@@ -843,6 +843,58 @@ class Client(object):
         #                               result_fetcher=result_fetcher,
         #                               limit=limit)
 
+    def get_gpx_file(self, activity_id):
+        gpx = '<?xml version="1.0" encoding="UTF-8"?>\n' \
+              '<gpx '\
+                ' version="1.0" '\
+                ' creator="GPSBabel - http://www.gpsbabel.org" '\
+                ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '\
+                ' xmlns="http://www.topografix.com/GPX/1/0" '\
+                ' xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd">\n'\
+                '<time>{time}</time>\n' \
+                '<bounds minlat="{min_lat}" minlon="{min_lng}" maxlat = "{max_lat}" maxlon="{max_lng}" />\n' \
+                '<trk>\n' \
+                '<name>{name}</name>\n' \
+                '<trkseg>{points}</trkseg>\n' \
+                '</trk>' \
+            '</gpx>'
+
+        streams = self.get_activity_streams(activity_id=activity_id, types=["latlng", "altitude", "time"])
+
+        if streams is None:
+            return None
+
+        if len(streams.keys()) == 0:
+            return None
+
+        lat = [d[0] for d in streams["latlng"].data]
+        lng = [d[1] for d in streams["latlng"].data]
+        alt = streams["altitude"].data
+        time = streams["time"].data
+
+        if len(lat) == 0:
+            return None
+
+        points = []
+        min_len = min(len(lat), len(lng), len(alt), len(time))
+        for i in range(0, min_len):
+            points.append("<trkpt lat=\"{lat}\" lon=\"{lng}\">\n  <ele>{altitude}</ele>\n  <time>{time}</time>\n</trkpt>".format(
+                lat=lat[i],
+                lng=lng[i],
+                altitude=alt[i],
+                time=time[i],
+            ))
+
+        return gpx.format(
+            name="new gpx file",
+            points="\n".join(points),
+            time=time[0],
+            min_lat=min(lat),
+            max_lat=min(lat),
+            min_lng=min(lng),
+            max_lng=min(lng),
+        )
+
     def get_gear(self, gear_id):
         """
         Get details for an item of gear.
