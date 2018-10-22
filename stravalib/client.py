@@ -864,6 +864,12 @@ class Client(object):
         if streams is None:
             return None
 
+        for key in ["latlng", "altitude", "time"]:
+            if key not in streams.keys():
+                return None
+            if streams[key] is None:
+                return None
+
         if len(streams.keys()) == 0:
             return None
 
